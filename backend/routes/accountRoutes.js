@@ -1,57 +1,62 @@
 const express = require("express");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/deposit", async (req, res) => {
+/* =========================
+   DEPOSIT ROUTE
+========================= */
+router.post("/deposit", authMiddleware, async (req, res) => {
   try {
-    const { accountNumber, amount } = req.body;
+    const { amount } = req.body;
 
-    const user = await User.findOne({ accountNumber });
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Enter a valid amount" });
+    }
+
+    const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "Account not found",
-      });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     user.balance += Number(amount);
-
     await user.save();
 
     res.status(200).json({
       message: "Amount deposited successfully",
       balance: user.balance,
     });
-  } catch (error) {
-    console.error(error);
 
-    res.status(500).json({
-      message: "Server Error",
-    });
+  } catch (error) {
+    console.error("DEPOSIT ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-router.post("/withdraw", async (req, res) => {
+/* =========================
+   WITHDRAW ROUTE
+========================= */
+router.post("/withdraw", authMiddleware, async (req, res) => {
   try {
-    const { accountNumber, amount } = req.body;
+    const { amount } = req.body;
 
-    const user = await User.findOne({ accountNumber });
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Enter a valid amount" });
+    }
+
+    const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "Account not found",
-      });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     if (user.balance < amount) {
-      return res.status(400).json({
-        message: "Insufficient balance",
-      });
+      return res.status(400).json({ message: "Insufficient balance" });
     }
 
     user.balance -= Number(amount);
-
     await user.save();
 
     res.status(200).json({
@@ -60,25 +65,20 @@ router.post("/withdraw", async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
+    console.error("WITHDRAW ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-
-router.get("/balance/:accountNumber", async (req, res) => {
+/* =========================
+   BALANCE ROUTE (used on dashboard load to always show fresh data)
+========================= */
+router.get("/balance", authMiddleware, async (req, res) => {
   try {
-    const { accountNumber } = req.params;
-
-    const user = await User.findOne({ accountNumber });
+    const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "Account not found",
-      });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     res.status(200).json({
@@ -88,11 +88,8 @@ router.get("/balance/:accountNumber", async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
+    console.error("BALANCE ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
