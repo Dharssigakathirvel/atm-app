@@ -421,7 +421,7 @@ export default function Home() {
       <nav className="nav">
         <a className="nav-logo" href="/">
           <span className="logo-icon">💳</span>
-          ATM App
+          ATM APPLICATION
         </a>
         <div className="nav-btns">
           <button className="btn-ghost" onClick={() => navigate("/login")}>Log in</button>
@@ -457,7 +457,7 @@ export default function Home() {
 
           <div className="hero-card-preview">
             {[
-              { icon: "🔐", val: "256-bit", label: "Encryption" },
+              { icon: "🔐", val: "Secured ", label: "Data Encryption" },
               { icon: "⚡", val: "Instant", label: "Transfers" },
               { icon: "🌸", val: "Zero", label: "Hidden fees" },
             ].map((s) => (
