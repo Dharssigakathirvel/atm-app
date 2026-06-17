@@ -433,7 +433,7 @@ export default function Home() {
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-eyebrow">
-            <span>✦</span> Secure · Simple · Smart
+            <span>✦</span> Secure · Protective · Reliable
           </div>
 
           <h1 className="hero-title">
@@ -442,7 +442,7 @@ export default function Home() {
           </h1>
 
           <p className="hero-sub">
-            Withdraw, deposit, and check your balance — all in one clean,
+            Withdraw, deposit and check your balance all in one clean,
             secure space designed around you.
           </p>
 
@@ -494,13 +494,7 @@ export default function Home() {
               icon: "📊",
               bg: "#fdf2f8",
               title: "Balance Check",
-              desc: "A clear, real-time look at what you have — no clutter, no confusion.",
-            },
-            {
-              icon: "🛡️",
-              bg: "#f0fdf4",
-              title: "Secure Sessions",
-              desc: "JWT-protected routes and encrypted storage keep your account safe every time.",
+              desc: "A clear look at what you have, no clutter &  confusion.",
             },
           ].map((f) => (
             <div className="feature-card" key={f.title}>
