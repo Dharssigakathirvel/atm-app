@@ -1,99 +1,88 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-console.log("✅ authRoutes LOADED");
 
 const router = express.Router();
 
+const JWT_SECRET = process.env.JWT_SECRET || "atm_secret_key";
+
 /* =========================
-   DEPOSIT ROUTE
+   REGISTER ROUTE
 ========================= */
-router.post("/deposit", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const { accountNumber, amount } = req.body;
+    const { name, email, accountNumber, password } = req.body;
 
-    if (!accountNumber || !amount) {
-      return res.status(400).json({ message: "Missing data" });
+    if (!name || !email || !accountNumber || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    const user = await User.findOne({ accountNumber });
-
-    if (!user) {
-      return res.status(404).json({ message: "Account not found" });
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    user.balance += Number(amount);
+    const accExists = await User.findOne({ accountNumber });
+    if (accExists) {
+      return res.status(400).json({ message: "Account number already exists" });
+    }
 
-    await user.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    res.status(200).json({
-      message: "Deposit successful",
-      balance: user.balance,
+    const user = await User.create({
+      name,
+      email,
+      accountNumber,
+      password: hashedPassword,
+      balance: 0,
     });
 
+    res.status(201).json({ message: "Account created successfully!" });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error("REGISTER ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 /* =========================
-   WITHDRAW ROUTE
+   LOGIN ROUTE
 ========================= */
-router.post("/withdraw", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
-    const { accountNumber, amount } = req.body;
+    const { email, password } = req.body;
 
-    if (!accountNumber || !amount) {
-      return res.status(400).json({ message: "Missing data" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ accountNumber });
-
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Account not found" });
+      return res.status(404).json({ message: "No account found with this email" });
     }
 
-    if (user.balance < amount) {
-      return res.status(400).json({ message: "Insufficient balance" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password" });
     }
 
-    user.balance -= Number(amount);
-
-    await user.save();
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
 
     res.status(200).json({
-      message: "Withdraw successful",
-      balance: user.balance,
+      message: "Login successful",
+      user: {
+        name: user.name,
+        email: user.email,
+        accountNumber: user.accountNumber,
+        balance: user.balance,
+        token,
+      },
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-/* =========================
-   BALANCE ROUTE
-========================= */
-router.get("/balance/:accountNumber", async (req, res) => {
-  try {
-    const { accountNumber } = req.params;
-
-    const user = await User.findOne({ accountNumber });
-
-    if (!user) {
-      return res.status(404).json({ message: "Account not found" });
-    }
-
-    res.status(200).json({
-      name: user.name,
-      accountNumber: user.accountNumber,
-      balance: user.balance,
-    });
-
-  } catch (error) {
-    console.error("🔥 BALANCE ERROR:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("LOGIN ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
